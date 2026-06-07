@@ -22,6 +22,14 @@ const ProceduralBackground = dynamic(() => import('@/components/ProceduralBackgr
 // ===== LocalStorage helpers =====
 const STORAGE_KEY = 'alterego_data'
 
+export interface DayHistory {
+  date: string
+  sleep: boolean
+  water: number
+  walk: boolean
+  totalScore: number
+}
+
 interface GameData {
   username: string
   habits: {sleep: boolean; water: number; walk: boolean}
@@ -33,6 +41,7 @@ interface GameData {
   equippedTitle: string | null
   mysteryBoxClaimed: boolean
   minigamePlayed: boolean
+  history: DayHistory[] // State riwayat murni
 }
 
 function getDefaultData(): GameData {
@@ -47,6 +56,7 @@ function getDefaultData(): GameData {
     equippedTitle: null,
     mysteryBoxClaimed: false,
     minigamePlayed: false,
+    history: [],
   }
 }
 
@@ -57,11 +67,27 @@ function loadData(): GameData {
     if (!raw) return getDefaultData()
     const parsed = JSON.parse(raw) as GameData
 
-    // Check if quest should be reset (new day)
+    const currentHistory = parsed.history || []
     const today = new Date().toISOString().split('T')[0]
-    if (parsed.questDate !== today) {
+
+    // Check if quest should be reset (new day) and save yesterday's data to history
+    if (parsed.questDate && parsed.questDate !== today) {
+      const sleepScore = parsed.habits.sleep ? 35 : 0
+      const waterScore = Math.round((parsed.habits.water / 8) * 40)
+      const walkScore = parsed.habits.walk ? 25 : 0
+      const totalScore = Math.min(100, sleepScore + waterScore + walkScore)
+
+      const yesterdayData: DayHistory = {
+        date: parsed.questDate,
+        sleep: parsed.habits.sleep,
+        water: parsed.habits.water,
+        walk: parsed.habits.walk,
+        totalScore,
+      }
+
       return {
         ...parsed,
+        history: [...currentHistory, yesterdayData],
         habits: {sleep: false, water: 0, walk: false},
         questCompleted: false,
         questDate: '',
@@ -70,7 +96,7 @@ function loadData(): GameData {
       }
     }
 
-    return parsed
+    return {...parsed, history: currentHistory}
   } catch {
     return getDefaultData()
   }
@@ -89,7 +115,7 @@ export default function Home() {
   const [showMysteryBox, setShowMysteryBox] = useState(false)
   const [showInventory, setShowInventory] = useState(false)
   const [showMinigame, setShowMinigame] = useState(false)
-  const [showStatistics, setShowStatistics] = useState(false) // State baru untuk Statistik
+  const [showStatistics, setShowStatistics] = useState(false)
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -106,7 +132,7 @@ export default function Home() {
     }
   }, [data, isLoaded])
 
-  // Calculate world state — "optimal" requires sleep + water===8 + walk
+  // Calculate world state
   const allHabitsDone = data.habits.sleep && data.habits.water === 8 && data.habits.walk
   const anyHabitDone = data.habits.sleep || data.habits.water > 0 || data.habits.walk
 
@@ -116,7 +142,6 @@ export default function Home() {
       ? 'optimal'
       : 'critical'
 
-  // Handle boolean habit toggle (sleep, walk)
   const handleToggle = useCallback(
     (key: 'sleep' | 'walk') => {
       if (data.questCompleted) return
@@ -128,7 +153,6 @@ export default function Home() {
     [data.questCompleted],
   )
 
-  // Handle water counter increment
   const handleAddWater = useCallback(() => {
     if (data.questCompleted) return
     setData((prev) => ({
@@ -140,7 +164,6 @@ export default function Home() {
     }))
   }, [data.questCompleted])
 
-  // Submit quest
   const handleSubmitQuest = useCallback(() => {
     const today = new Date().toISOString().split('T')[0]
     setData((prev) => ({
@@ -150,13 +173,11 @@ export default function Home() {
     }))
   }, [])
 
-  // Handle onboarding complete
   const handleOnboarding = useCallback((username: string) => {
     setData((prev) => ({...prev, username}))
     setShowOnboarding(false)
   }, [])
 
-  // Handle reward
   const handleReward = useCallback((reward: Reward) => {
     setData((prev) => ({
       ...prev,
@@ -168,15 +189,12 @@ export default function Home() {
     }))
   }, [])
 
-  // Handle minigame complete
   const handleMinigameComplete = useCallback((_score: number) => {
     setShowMinigame(false)
     setData((prev) => ({...prev, minigamePlayed: true}))
-    // Auto-open mystery box after minigame
     setTimeout(() => setShowMysteryBox(true), 500)
   }, [])
 
-  // Equip handlers
   const handleEquipPet = useCallback((id: string | null) => {
     setData((prev) => ({...prev, equippedPet: id}))
   }, [])
@@ -189,7 +207,6 @@ export default function Home() {
     setData((prev) => ({...prev, equippedTitle: id}))
   }, [])
 
-  // Background gradient based on state
   const bgGradient =
     worldState === 'optimal'
       ? 'linear-gradient(135deg, #ccfbf1 0%, #6ee7b7 100%)'
@@ -211,12 +228,10 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* Onboarding */}
       <AnimatePresence>
         {showOnboarding && <OnboardingScreen onComplete={handleOnboarding} />}
       </AnimatePresence>
 
-      {/* Main Container */}
       <main
         className="relative w-full h-screen overflow-hidden font-[Outfit,sans-serif]"
         style={{
@@ -224,10 +239,8 @@ export default function Home() {
           transition: 'background 1.5s ease',
         }}
       >
-        {/* Layer 0+1: Procedural Background */}
         <ProceduralBackground worldState={worldState} />
 
-        {/* HUD Badge Header — top-left */}
         <motion.div
           initial={{opacity: 0, x: -20}}
           animate={{opacity: 1, x: 0}}
@@ -275,14 +288,12 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* Avatar — center bottom */}
         <AvatarRenderer
           worldState={worldState}
           equippedPet={data.equippedPet}
           equippedItem={data.equippedItem}
         />
 
-        {/* Habit Dashboard */}
         <HabitDashboard
           habits={data.habits}
           onToggleSleep={() => handleToggle('sleep')}
@@ -292,7 +303,6 @@ export default function Home() {
           questCompleted={data.questCompleted}
         />
 
-        {/* Submit Quest Button */}
         <AnimatePresence>
           {!data.questCompleted && anyHabitDone && (
             <motion.button
@@ -327,14 +337,12 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* Bottom Action Bar */}
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{delay: 0.6}}
           className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex gap-3"
         >
-          {/* Inventory Button */}
           <motion.button
             id="inventory-btn"
             whileHover={{scale: 1.1, y: -3}}
@@ -361,7 +369,6 @@ export default function Home() {
             Inventaris
           </motion.button>
 
-          {/* Statistics Button */}
           <motion.button
             id="statistics-btn"
             whileHover={{scale: 1.1, y: -3}}
@@ -388,7 +395,6 @@ export default function Home() {
             Statistik
           </motion.button>
 
-          {/* Minigame Button (only in optimal state) */}
           <AnimatePresence>
             {worldState === 'optimal' && !data.minigamePlayed && (
               <motion.button
@@ -421,7 +427,6 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          {/* Mystery Box Button */}
           <AnimatePresence>
             {data.questCompleted &&
               !data.mysteryBoxClaimed &&
@@ -468,7 +473,6 @@ export default function Home() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Layer 4: Modals & Overlays */}
         <GlitchSweeperGame
           isActive={showMinigame}
           onComplete={handleMinigameComplete}
@@ -493,11 +497,11 @@ export default function Home() {
           onEquipTitle={handleEquipTitle}
         />
 
-        {/* Advanced Statistics Modal */}
         <AdvancedStatisticsModal
           isOpen={showStatistics}
           onClose={() => setShowStatistics(false)}
           currentHabits={data.habits}
+          history={data.history}
         />
       </main>
     </>

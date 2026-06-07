@@ -25,7 +25,6 @@ import {
 } from 'recharts'
 
 // ===== Types =====
-
 interface DayRecord {
   date: string // ISO date string (YYYY-MM-DD)
   sleep: boolean
@@ -36,48 +35,14 @@ interface DayRecord {
 
 type TimeFilter = '7days' | 'month' | 'all'
 
-// interface AdvancedStatisticsModalProps {
-//   isOpen: boolean
-//   onClose: () => void
-// }
 interface AdvancedStatisticsModalProps {
   isOpen: boolean
   onClose: () => void
-  currentHabits: {sleep: boolean; water: number; walk: boolean} // TAMBAHKAN INI
-}
-// ===== Mock Data Builder =====
-
-function generateMockHistory(days: number = 30): DayRecord[] {
-  const records: DayRecord[] = []
-  const now = new Date()
-
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
-
-    // Simulate realistic habit patterns with a slight upward trend
-    const progressFactor = 1 - i / days // 0 -> 1 as we get closer to today
-    const baseChance = 0.4 + progressFactor * 0.35 // 40% -> 75%
-
-    const sleep = Math.random() < baseChance + Math.random() * 0.15
-    const water = Math.min(8, Math.floor(Math.random() * 5 + progressFactor * 4.5))
-    const walk = Math.random() < baseChance + Math.random() * 0.1
-
-    // Calculate total score: sleep (35pts) + water (40pts based on 8) + walk (25pts)
-    const sleepScore = sleep ? 35 : 0
-    const waterScore = Math.round((water / 8) * 40)
-    const walkScore = walk ? 25 : 0
-    const totalScore = Math.min(100, sleepScore + waterScore + walkScore)
-
-    records.push({date: dateStr, sleep, water, walk, totalScore})
-  }
-
-  return records
+  currentHabits: {sleep: boolean; water: number; walk: boolean}
+  history: DayRecord[] // Menerima data history dari localStorage
 }
 
 // ===== Score Color Helper =====
-
 function getScoreColor(score: number): string {
   if (score >= 70) return '#34d399' // green
   if (score >= 40) return '#fbbf24' // yellow
@@ -91,7 +56,6 @@ function getScoreColorDim(score: number): string {
 }
 
 // ===== Moving Average Calculator =====
-
 function computeMovingAverage(data: DayRecord[], window: number = 3): number[] {
   const result: number[] = []
   for (let i = 0; i < data.length; i++) {
@@ -104,7 +68,6 @@ function computeMovingAverage(data: DayRecord[], window: number = 3): number[] {
 }
 
 // ===== Custom Tooltip =====
-
 interface TooltipPayloadItem {
   value: number
   dataKey: string
@@ -173,21 +136,18 @@ function CustomChartTooltip({active, payload, label}: CustomTooltipProps) {
 }
 
 // ===== Main Component =====
-
 export default function AdvancedStatisticsModal({
   isOpen,
   onClose,
   currentHabits,
+  history,
 }: AdvancedStatisticsModalProps) {
   const [activeFilter, setActiveFilter] = useState<TimeFilter>('7days')
 
-  // Generate mock data only for the past 29 days
-  const baseData = useMemo(() => generateMockHistory(30), [])
-
-  // Timpa (overwrite) data hari terakhir dengan data real-time dari index.tsx
+  // Gabungkan riwayat murni dengan data hari ini secara dinamis
   const allData = useMemo(() => {
-    const data = [...baseData]
-    const todayIndex = data.length - 1
+    const data = [...history]
+    const today = new Date().toISOString().split('T')[0]
 
     // Kalkulasi skor asli hari ini
     const sleepScore = currentHabits.sleep ? 35 : 0
@@ -195,16 +155,17 @@ export default function AdvancedStatisticsModal({
     const walkScore = currentHabits.walk ? 25 : 0
     const totalScore = Math.min(100, sleepScore + waterScore + walkScore)
 
-    // Masukkan data klik ke grafik
-    data[todayIndex] = {
-      ...data[todayIndex],
+    // Masukkan data klik real-time ke array grafik
+    data.push({
+      date: today,
       sleep: currentHabits.sleep,
       water: currentHabits.water,
       walk: currentHabits.walk,
       totalScore,
-    }
+    })
+
     return data
-  }, [baseData, currentHabits])
+  }, [history, currentHabits])
 
   // ===== Filter Logic =====
   const filteredData = useMemo(() => {
@@ -223,7 +184,6 @@ export default function AdvancedStatisticsModal({
 
   // ===== Top Level Metrics =====
   const metrics = useMemo(() => {
-    // 🔥 Streak: count backwards from end for consecutive days with totalScore >= 70
     let streak = 0
     for (let i = filteredData.length - 1; i >= 0; i--) {
       if (filteredData[i].totalScore >= 70) {
@@ -233,16 +193,13 @@ export default function AdvancedStatisticsModal({
       }
     }
 
-    // ❤️ Average Score
     const avgScore =
       filteredData.length > 0
         ? Math.round(filteredData.reduce((s, d) => s + d.totalScore, 0) / filteredData.length)
         : 0
 
-    // 📋 Total Check-in (days with data)
     const totalCheckins = filteredData.length
 
-    // ⚔️ Quests Completed: total individual habit targets met
     let questsCompleted = 0
     filteredData.forEach((d) => {
       if (d.sleep) questsCompleted++
@@ -273,7 +230,7 @@ export default function AdvancedStatisticsModal({
 
   // ===== Habit Progress =====
   const habitProgress = useMemo(() => {
-    // Ubah logika agar merender progres riil hari ini (lebih memuaskan secara UX)
+    // Merender progres dinamis sesuai aktivitas user hari ini
     return {
       sleep: currentHabits.sleep ? 100 : 0,
       water: Math.round((currentHabits.water / 8) * 100),
@@ -864,7 +821,7 @@ export default function AdvancedStatisticsModal({
                       letterSpacing: '0.5px',
                     }}
                   >
-                    PROGRES KEBIASAAN KUMULATIF
+                    PROGRES KEBIASAAN HARIAN
                   </span>
                 </div>
 
