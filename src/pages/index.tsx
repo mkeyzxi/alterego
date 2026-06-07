@@ -3,7 +3,7 @@ import Head from 'next/head'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import {motion, AnimatePresence} from 'framer-motion'
-import {Package, Swords, Gift} from 'lucide-react'
+import {Package, Swords, Gift, BarChart3} from 'lucide-react'
 
 import HabitDashboard from '@/components/HabitDashboard'
 import AvatarRenderer from '@/components/AvatarRenderer'
@@ -11,6 +11,7 @@ import MysteryBoxModal from '@/components/MysteryBoxModal'
 import InventoryDrawer from '@/components/InventoryDrawer'
 import GlitchSweeperGame from '@/components/GlitchSweeperGame'
 import OnboardingScreen from '@/components/OnboardingScreen'
+import AdvancedStatisticsModal from '@/components/AdvancedStatisticsModal'
 import type {Reward, RewardCategory} from '@/components/MysteryBoxModal'
 
 // Dynamic import for tsparticles (client-only)
@@ -88,6 +89,7 @@ export default function Home() {
   const [showMysteryBox, setShowMysteryBox] = useState(false)
   const [showInventory, setShowInventory] = useState(false)
   const [showMinigame, setShowMinigame] = useState(false)
+  const [showStatistics, setShowStatistics] = useState(false) // State baru untuk Statistik
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -214,7 +216,7 @@ export default function Home() {
         {showOnboarding && <OnboardingScreen onComplete={handleOnboarding} />}
       </AnimatePresence>
 
-      {/* Main Container — Instruction #2: relative w-full h-screen */}
+      {/* Main Container */}
       <main
         className="relative w-full h-screen overflow-hidden font-[Outfit,sans-serif]"
         style={{
@@ -225,39 +227,62 @@ export default function Home() {
         {/* Layer 0+1: Procedural Background */}
         <ProceduralBackground worldState={worldState} />
 
-        {/* Instruction #3: HUD Badge Header — top-left */}
+        {/* HUD Badge Header — top-left */}
         <motion.div
           initial={{opacity: 0, x: -20}}
           animate={{opacity: 1, x: 0}}
           transition={{delay: 0.3}}
-          className="absolute top-5 left-5 z-40 flex items-center gap-3 bg-white/20 backdrop-blur-md p-2 rounded-full"
+          className="absolute top-5 left-5 z-40 flex items-center gap-3 bg-white/20 backdrop-blur-md p-2 pr-4 rounded-full shadow-lg"
         >
-          <Image
-            src="/img/badge_rookie.png"
-            alt="Badge Rookie"
-            width={40}
-            height={40}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <span
-            className="text-sm font-bold pr-3"
-            style={{
-              color: worldState === 'optimal' ? '#064e3b' : '#e2e8f0',
-              textShadow: worldState === 'optimal' ? 'none' : '0 0 10px rgba(0,0,0,0.5)',
-            }}
-          >
-            {data.username}
-          </span>
+          {data.equippedTitle ? (
+            <div className="relative w-10 h-10 flex-shrink-0 bg-black/20 rounded-full p-1 border border-amber-400/30">
+              <Image
+                src={
+                  data.equippedTitle === 'title_hero'
+                    ? '/img/badge_master.png'
+                    : '/img/badge_rookie.png'
+                }
+                alt="Badge"
+                fill
+                className="object-contain drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+              />
+            </div>
+          ) : (
+            <Image
+              src="/img/badge_rookie.png"
+              alt="Badge Rookie"
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          )}
+          <div className="flex flex-col">
+            <span
+              className="text-sm font-bold"
+              style={{
+                color: worldState === 'optimal' ? '#064e3b' : '#e2e8f0',
+                textShadow: worldState === 'optimal' ? 'none' : '0 0 10px rgba(0,0,0,0.5)',
+              }}
+            >
+              {data.username}
+            </span>
+            <span
+              className="text-[10px] font-semibold uppercase tracking-widest"
+              style={{color: worldState === 'optimal' ? '#047857' : '#fbbf24'}}
+            >
+              {data.equippedTitle ? data.equippedTitle.replace('title_', 'Rank: ') : 'Tanpa Gelar'}
+            </span>
+          </div>
         </motion.div>
 
-        {/* Instruction #2: Avatar — center bottom */}
+        {/* Avatar — center bottom */}
         <AvatarRenderer
           worldState={worldState}
           equippedPet={data.equippedPet}
           equippedItem={data.equippedItem}
         />
 
-        {/* Instruction #5: Habit Dashboard — mobile bottom full-width, md side panel */}
+        {/* Habit Dashboard */}
         <HabitDashboard
           habits={data.habits}
           onToggleSleep={() => handleToggle('sleep')}
@@ -267,7 +292,7 @@ export default function Home() {
           questCompleted={data.questCompleted}
         />
 
-        {/* Submit Quest Button — desktop only (z-40) */}
+        {/* Submit Quest Button */}
         <AnimatePresence>
           {!data.questCompleted && anyHabitDone && (
             <motion.button
@@ -307,7 +332,7 @@ export default function Home() {
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{delay: 0.6}}
-          className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40  md:flex gap-3"
+          className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex gap-3"
         >
           {/* Inventory Button */}
           <motion.button
@@ -327,10 +352,40 @@ export default function Home() {
               fontWeight: 600,
               color: 'rgba(255,255,255,0.8)',
               fontFamily: 'inherit',
+              borderRadius: '16px',
+              background: 'rgba(255,255,255,0.05)',
+              backdropFilter: 'blur(10px)',
             }}
           >
             <Package size={18} />
             Inventaris
+          </motion.button>
+
+          {/* Statistics Button */}
+          <motion.button
+            id="statistics-btn"
+            whileHover={{scale: 1.1, y: -3}}
+            whileTap={{scale: 0.95}}
+            onClick={() => setShowStatistics(true)}
+            className="glass-panel"
+            style={{
+              padding: '12px 20px',
+              border: '1px solid rgba(255,255,255,0.15)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.8)',
+              fontFamily: 'inherit',
+              borderRadius: '16px',
+              background: 'rgba(255,255,255,0.05)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <BarChart3 size={18} />
+            Statistik
           </motion.button>
 
           {/* Minigame Button (only in optimal state) */}
@@ -361,7 +416,7 @@ export default function Home() {
                 }}
               >
                 <Swords size={18} />
-                Bersihkan Dunia
+                <span className="hidden md:inline">Bersihkan Dunia</span>
               </motion.button>
             )}
           </AnimatePresence>
@@ -414,21 +469,18 @@ export default function Home() {
         </motion.div>
 
         {/* Layer 4: Modals & Overlays */}
-        {/* Minigame */}
         <GlitchSweeperGame
           isActive={showMinigame}
           onComplete={handleMinigameComplete}
           onClose={() => setShowMinigame(false)}
         />
 
-        {/* Mystery Box Modal */}
         <MysteryBoxModal
           isOpen={showMysteryBox}
           onClose={() => setShowMysteryBox(false)}
           onReward={handleReward}
         />
 
-        {/* Inventory Drawer */}
         <InventoryDrawer
           isOpen={showInventory}
           onClose={() => setShowInventory(false)}
@@ -439,6 +491,13 @@ export default function Home() {
           onEquipPet={handleEquipPet}
           onEquipItem={handleEquipItem}
           onEquipTitle={handleEquipTitle}
+        />
+
+        {/* Advanced Statistics Modal */}
+        <AdvancedStatisticsModal
+          isOpen={showStatistics}
+          onClose={() => setShowStatistics(false)}
+          currentHabits={data.habits}
         />
       </main>
     </>
