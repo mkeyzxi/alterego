@@ -1,42 +1,153 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@import "tailwindcss";
+
+/* ===== ALTEREGO - Global Styles ===== */
+
+@theme {
+  /* Healthy State Colors */
+  --color-healthy-bg-from: #ccfbf1;
+  --color-healthy-bg-to: #6ee7b7;
+  --color-healthy-text: #064e3b;
+  --color-healthy-accent: #10b981;
+  --color-healthy-accent-hover: #059669;
+  --color-healthy-glow: rgba(16, 185, 129, 0.5);
+
+  /* Critical State Colors */
+  --color-critical-bg-from: #0f172a;
+  --color-critical-bg-to: #18181b;
+  --color-critical-text: #f87171;
+  --color-critical-accent: rgba(127, 29, 29, 0.5);
+  --color-critical-border: #ef4444;
+  --color-critical-glow: rgba(239, 68, 68, 0.5);
+
+  /* Neutral State Colors */
+  --color-neutral-bg-from: #1e293b;
+  --color-neutral-bg-to: #334155;
+  --color-neutral-text: #94a3b8;
+  --color-neutral-accent: #6366f1;
+
+  /* UI Colors */
+  --color-glass-bg: rgba(255, 255, 255, 0.08);
+  --color-glass-border: rgba(255, 255, 255, 0.15);
+  --color-glass-bg-light: rgba(255, 255, 255, 0.25);
+  --color-glass-border-light: rgba(255, 255, 255, 0.4);
+
+  /* Font */
+  --font-outfit: "Outfit", sans-serif;
+
+  /* Custom animations */
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-glitch: glitch 0.2s linear infinite;
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-slide-up: slide-up 0.6s ease-out forwards;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-virus-pop: virus-pop 0.3s ease-out forwards;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ===== Keyframes ===== */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+@keyframes glitch {
+  0% { transform: translate(0); opacity: 1; }
+  20% { transform: translate(-2px, 1px); opacity: 0.8; }
+  40% { transform: translate(2px, -1px); opacity: 0.9; }
+  60% { transform: translate(-1px, -2px); opacity: 0.7; }
+  80% { transform: translate(1px, 2px); opacity: 0.9; }
+  100% { transform: translate(0); opacity: 1; }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes virus-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== Base Styles ===== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-outfit);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+#__next {
+  width: 100%;
+  height: 100%;
+}
+
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* ===== Scrollbar ===== */
+
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== Glass morphism utility ===== */
+
+.glass-panel {
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 16px;
+}
+
+.glass-panel-light {
+  background: var(--color-glass-bg-light);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-glass-border-light);
+  border-radius: 16px;
 }

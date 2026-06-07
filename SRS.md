@@ -1,87 +1,87 @@
 # System Requirements Specification (SRS)
-## Proyek: ALTEREGO (Gamified Habit Tracker)
-**Versi:** 1.0 (MVP untuk Kompetisi/Purwarupa)
-**Target Tenggat Waktu:** 3 Hari Pengerjaan
+## Proyek: ALTEREGO (Gamified Habit Tracker) - Hybrid Visual Edition
+**Versi:** 2.0 (Expanded MVP untuk Kompetisi)
+**Pendekatan Visual:** Hybrid (Static Assets + Procedural Code-Driven Environment)
 
 ---
 
 ## 1. Pendahuluan
 ### 1.1 Tujuan Sistem
-[cite_start]ALTEREGO adalah website gamifikasi yang bertema dunia virtual, dirancang khusus untuk mengubah kebiasaan hidup pengguna menjadi metrik permainan[cite: 2]. [cite_start]Tujuan utamanya adalah mendorong anak Gen Z untuk menjalani kebiasaan sehat melalui pendekatan yang seru, estetik, dan tidak membosankan[cite: 4].
+[cite_start]ALTEREGO adalah website game bertema dunia virtual yang dirancang secara khusus agar berubah sesuai dengan kebiasaan hidup penggunanya[cite: 2]. [cite_start]Jika pengguna menerapkan pola hidup sehat, maka dunia virtual dan avatar mereka akan ikut membaik[cite: 3]. [cite_start]Tujuan utamanya adalah mendorong demografi Gen Z agar lebih bersemangat menjalani kebiasaan sehat melalui mekanisme gamifikasi yang seru, estetis, dan tidak membosankan[cite: 4].
 
-### 1.2 Batasan Proyek (MVP Scope)
-Mengingat tenggat waktu kompetisi, rilis ini dibatasi pada **High-Fidelity Interactive Prototype**. Rendering dunia virtual menggunakan manipulasi antarmuka (DOM/CSS) berbasis gambar (PNG transparan/SVG), bukan *game engine* berbasis Canvas/WebGL. Penyimpanan data memanfaatkan *Client-Side Storage* untuk memangkas waktu pengembangan *Back-End*.
+### 1.2 Batasan Proyek & Rendering
+Sistem ini menggunakan arsitektur antarmuka hibrida:
+* **Entitas Statis:** Avatar, *Mystery Box*, dan *Item* inventaris menggunakan aset gambar `.png` berlatar transparan.
+* **Lingkungan Prosedural:** Efek cuaca, atmosfer dunia, dan elemen *glitch* dirender secara *real-time* menggunakan DOM manipulation (CSS/Framer Motion) dan algoritma partikel (`tsparticles`) untuk menekan beban memori dan meniadakan kebutuhan aset latar belakang beresolusi tinggi.
 
 ---
 
 ## 2. Kebutuhan Fungsional (Functional Requirements)
 
-### F-01: Inisiasi Pengguna & Avatar
-* [cite_start]**F-01.1:** Sistem harus memfasilitasi pembuatan karakter avatar dasar oleh pengguna saat pertama kali masuk[cite: 6, 7].
-* **F-01.2:** Sistem harus menyimpan nama pengguna dan status kepemilikan aset secara lokal.
+### F-01: Orientasi Pengguna
+* [cite_start]**F-01.1:** Sistem harus menyediakan antarmuka bagi pengguna untuk membuat karakter avatar dasar saat pertama kali masuk ke dalam website[cite: 6, 7].
 
-### F-02: Input Kebiasaan Harian (Daily Habit Input)
-* [cite_start]**F-02.1:** Sistem harus menyediakan formulir antarmuka bagi pengguna untuk mencentang kebiasaan harian[cite: 8].
-* [cite_start]**F-02.2:** Parameter kebiasaan wajib mencakup: Tidur tepat waktu [cite: 9][cite_start], Minum air [cite: 10][cite_start], dan Jalan kaki[cite: 11].
+### F-02: Engine Pelacak Kebiasaan (Habit Tracker)
+* [cite_start]**F-02.1:** Sistem harus menyediakan formulir *Daily Quest* bagi pengguna untuk mencatat kebiasaan harian mereka[cite: 8, 16].
+* [cite_start]**F-02.2:** Input data wajib mencakup tiga metrik utama: Tidur tepat waktu[cite: 9][cite_start], Minum air[cite: 10][cite_start], dan Jalan kaki[cite: 11].
+* [cite_start]**F-02.3:** Website harus mampu membaca dan mengevaluasi data masukan tersebut secara instan (*real-time state calculation*)[cite: 12].
 
-### F-03: Mesin Logika Status Dunia (World State Engine)
-* [cite_start]**F-03.1:** Sistem harus membaca dan memproses data input harian pengguna secara instan[cite: 12].
-* [cite_start]**F-03.2 (Kondisi Sehat):** Jika ketiga kebiasaan terpenuhi, sistem harus mengubah visual avatar menjadi sehat, latar belakang kota virtual menjadi cerah, dan memunculkan *Mystery Box*[cite: 14].
-* [cite_start]**F-03.3 (Kondisi Buruk):** Jika pengguna malas bergerak, begadang, dan kurang minum, sistem harus merender avatar menjadi lelah, mengubah kota virtual menjadi gelap, dan menerapkan efek *glitch* pada antarmuka[cite: 15].
+### F-03: Procedural State Environment (Logika Perubahan Dunia)
+[cite_start]Dunia virtual harus bereaksi dan berubah mengikuti data kebiasaan pengguna[cite: 13].
+* [cite_start]**F-03.1 (State: Optimal):** Jika target harian (tidur cukup, minum air, jalan kaki) terpenuhi, sistem harus merender avatar (`avatar_healthy.png`), mengubah latar belakang CSS menjadi cerah, mengaktifkan efek partikel cahaya menggunakan `tsparticles`, dan memunculkan *Mystery Box*[cite: 14].
+* [cite_start]**F-03.2 (State: Kritis):** Jika pengguna malas bergerak, begadang, dan tidak minum air, sistem harus menukar avatar (`avatar_tired.png`), mengubah CSS kota menjadi gelap/suram, dan secara acak menyuntikkan efek *glitch* pada elemen DOM/teks[cite: 15].
 
-### F-04: Sistem Quest & Gacha Hadiah
-* [cite_start]**F-04.1:** Sistem harus memverifikasi penyelesaian *daily quest* pengguna[cite: 16].
-* [cite_start]**F-04.2:** Sistem harus memiliki fungsi acak (*randomizer*) untuk membuka *Mystery Box*[cite: 17].
-* **F-04.3:** Hadiah yang diekstraksi dari *Mystery Box* harus terdiri dari:
-  * [cite_start]**Skin avatar:** Kostum khusus untuk karakter pengguna[cite: 18].
-  * [cite_start]**Item virtual:** Dekorasi digital untuk dunia virtual[cite: 19].
-  * [cite_start]**Pet digital:** Hewan pendamping karakter utama[cite: 21].
-  * [cite_start]**Title khusus:** Gelar pencapaian virtual[cite: 22].
+### F-04: Mekanik Gacha & Inventaris
+* [cite_start]**F-04.1:** Pengguna diberikan satu kesempatan untuk membuka *Mystery Box* setelah menyelesaikan *daily quest*[cite: 16, 17].
+* **F-04.2:** Algoritma acak (*RNG*) akan mendistribusikan satu dari empat kategori hadiah:
+  * [cite_start]**Skin avatar:** Tampilan atau kostum khusus untuk karakter pengguna[cite: 18].
+  * [cite_start]**Item virtual:** Benda digital yang digunakan untuk menghias dunia virtual[cite: 19].
+  * [cite_start]**Pet digital:** Hewan pendamping virtual di dunia ALTEREGO[cite: 21].
+  * [cite_start]**Title khusus:** Gelar virtual representasi pencapaian[cite: 22].
+* [cite_start]**F-04.3:** Sistem harus mendorong pengguna untuk kembali keesokan harinya guna melihat perubahan baru pada dunia mereka[cite: 23].
+
+### F-05: Retensi Interaktif (Minigame "Glitch Sweeper")
+* **F-05.1:** Sistem menyediakan *minigame* mini-DOM berdurasi 30 detik yang hanya bisa diakses saat *State: Optimal*.
+* **F-05.2:** *Minigame* mengharuskan pengguna mengklik (*tapping*) elemen "virus digital" yang muncul secara acak (koordinat absolut) di layar untuk membersihkan dunia virtual.
 
 ---
 
 ## 3. Kebutuhan Non-Fungsional (Non-Functional Requirements)
 
-### NF-01: Estetika Visual & Kinerja UI
-* Transisi antara status "Sehat/Cerah" dan "Lelah/Gelap" harus berjalan mulus menggunakan animasi CSS murni dengan minimal **60 FPS** untuk mencegah patah-patah (*stuttering*).
-* Desain antarmuka harus responsif dan mendukung pendekatan *mobile-first*.
+### NF-01: Kinerja Rendering Prosedural
+* Animasi partikel (`tsparticles`) dan transisi lingkungan wajib dibatasi maksimal **100 partikel aktif** di layar pada perangkat seluler untuk menjaga stabilitas 60 FPS.
+* Perubahan *state* lingkungan (cerah ke gelap) tidak boleh memicu *re-render* total pada komponen *Habit Form* atau mematikan aliran musik latar jika ada.
 
-### NF-02: Kinerja & Penyimpanan (Data Persistence)
-* Waktu pemuatan halaman awal (*Initial Load Time*) tidak boleh melebihi 2 detik. Aset PNG/SVG harus dikompresi.
-* [cite_start]Data *state* pengguna (inventaris hadiah, status kota) harus disimpan di dalam `localStorage` peramban untuk memastikan perubahan tetap ada saat pengguna kembali keesokan harinya[cite: 23].
-
----
-
-## 4. Arsitektur & Teknologi (Tech Stack)
-
-Untuk mencapai fungsionalitas di atas dalam waktu 72 jam, tumpukan teknologi berikut akan digunakan:
-
-| Komponen | Teknologi Terpilih | Alasan Penggunaan (Scope 3 Hari) |
-| :--- | :--- | :--- |
-| **Framework Utama** | Next.js / React.js | Memungkinkan pembuatan komponen UI modular (Avatar, Form, Box) dan manajemen *state* halaman secara cepat. |
-| **Styling & Animasi** | Tailwind CSS | Menulis efek transisi, gradasi warna dunia (cerah/gelap), dan *glitch animation* tanpa meninggalkan file komponen HTML. |
-| **Manajemen Aset** | PNG Transparan & SVG | Manipulasi objek ringan melalui DOM. Mengabaikan kebutuhan *engine* 3D yang berat. |
-| **Database / State** | LocalStorage API (Mock DB) | Memotong waktu *setup server*. Data cukup menetap di perangkat klien untuk keperluan demonstrasi kompetisi. |
+### NF-02: Penyimpanan Sisi Klien (Data Persistence)
+* Seluruh data inventaris (*item*, *pet*, status avatar) dan riwayat kebiasaan wajib dienkode dan disimpan dalam `localStorage`.
+* Sistem memiliki mekanisme pengecekan *timestamp* untuk me-reset formulir *daily quest* pada pukul 00:00 waktu setempat, namun mempertahankan koleksi aset inventaris.
 
 ---
 
-## 5. Struktur Data (JSON Mockup untuk LocalStorage)
+## 4. Stack Teknologi & Paket Instalasi Dasar
 
-```json
-{
-  "userProfile": {
-    "name": "Player1",
-    "lastLogin": "2026-06-06",
-    "currentState": "healthy" 
-  },
-  "habitsToday": {
-    "sleep": true,
-    "water": true,
-    "walk": false
-  },
-  "inventory": {
-    "skins": ["default_skin"],
-    "pets": ["cyber_cat"],
-    "titles": ["The Beginner"]
-  }
-}
+| Komponen Arsitektur | Teknologi / Pustaka (Library) |
+| :--- | :--- |
+| **Kerangka Kerja UI** | Next.js (React) |
+| **Manipulasi Styling & Layout** | Tailwind CSS |
+| **Animasi Elemen Antarmuka** | Framer Motion (`npm i framer-motion`) |
+| **Procedural Environment (Partikel)** | tsParticles (`npm i react-tsparticles tsparticles`) |
+| **Ikon Antarmuka (HUD/UI)** | Lucide React (`npm i lucide-react`) |
+| **Penyimpanan Data** | Native Browser `localStorage` API |
+
+---
+
+## 5. Struktur Komponen (Frontend React)
+
+```text
+/src
+  ├── /components
+  │     ├── ProceduralBackground.jsx  # Merender tsParticles (Cahaya vs Hujan Digital)
+  │     ├── AvatarRenderer.jsx        # Menangani load PNG & animasi floating/glitch CSS
+  │     ├── HabitDashboard.jsx        # Formulir centang & kalkulasi skor
+  │     ├── MysteryBoxModal.jsx       # Animasi gacha & distribusi hadiah
+  │     ├── InventoryDrawer.jsx       # Menampilkan array JSON hadiah
+  │     └── GlitchSweeperGame.jsx     # Logika klik koordinat minigame
+  │
+  └── /app
+        └── page.js                   # Container state utama (State Management Controller)

@@ -1,22 +1,76 @@
-Ini adalah alur pengguna (User Flow) yang telah saya optimalkan secara ketat. Mengingat tenggat waktu kompetisi sisa kurang dari 72 jam, saya membuang semua langkah navigasi yang berbelit-belit. Alur ini dirancang agar kamu bisa langsung menerjemahkannya menjadi komponen halaman tunggal (Single Page Application) menggunakan Next.js.Tidak ada menu dropdown rumit atau sistem routing halaman yang berlapis. Semua terjadi di satu dasbor utama untuk memberikan dampak visual yang instan bagi juri.Pemetaan Alur Pengguna (MVP 72 Jam)1. Layar Orientasi (Onboarding Screen)Aksi: Pengguna masuk ke website. Sistem mengecek localStorage. Jika belum ada data profil, layar ini muncul.  Interaksi: Pengguna memasukkan nama (opsional) dan membuat karakter avatar  (memilih satu dari dua atau tiga gambar dasar PNG berlatar transparan).  Transisi: Setelah klik "Mulai", data disimpan ke localStorage dan layar bergeser ke Dasbor Utama.2. Dasbor Utama (Main Dashboard) – Status Netral/AwalVisual: Latar belakang standar (misalnya abu-abu atau warna matte netral). Avatar diam di tengah layar.Aksi: Pengguna melihat panel Daily Quest di sisi layar dan mengisi kebiasaan harian.  Input Pengguna: Mencentang kotak untuk:Tidur tepat waktu   Minum air   Jalan kaki   3. Pemrosesan Data & Transisi State (Real-Time)Aksi: Website membaca data tersebut  setiap kali kotak dicentang (menggunakan state React). Dunia virtual berubah mengikuti kebiasaan pengguna.  Percabangan Logika:Kondisi A (Positif): Jika pengguna tidur cukup, minum air, jalan kaki (centang 3/3). Avatar terlihat sehat, latar belakang CSS beralih ke warna kota virtual yang cerah, dan memicu tombol/ikon Mystery Box muncul di layar.  Kondisi B (Negatif): Jika pengguna begadang, malas bergerak, tidak minum air (centang 0/3 atau 1/3). Avatar ditukar dengan PNG yang terlihat lelah, kota virtual (latar belakang) menjadi gelap, dan efek glitch CSS diaktifkan pada elemen layar.  4. Interaksi Gacha (Mystery Box Modal)Aksi: Jika pengguna menyelesaikan daily quest  (Kondisi A tercapai), pengguna mengklik Mystery Box yang bergetar/beranimasi.  Interaksi: Sebuah modal pop-up muncul. Sistem menjalankan fungsi acak dan menampilkan hadiah yang didapat. Hadiah tersebut adalah salah satu dari:  Skin avatar (tampilan khusus untuk karakter pengguna).  Item virtual (benda digital untuk menghias dunia pengguna).  Pet digital (hewan virtual yang menemani avatar pengguna di dunia ALTEREGO).  Title khusus (gelar virtual yang menunjukkan pencapaian pengguna).  5. Panel Inventaris (Inventory Drawer)Aksi: Pengguna menutup pop-up Mystery Box.Interaksi: Pengguna dapat membuka panel samping (sidebar drawer) untuk melihat koleksi item, pet, atau title yang baru saja mereka dapatkan dan menyimpannya (mengubah state tampilan yang aktif).Retensi: Pengguna diakhiri dengan layar dasbor yang sudah dimodifikasi (cerah + ada pet baru). Desain ini memicu keinginan pengguna kembali lagi keesokan hari karena ingin melihat perubahan baru.  Diagram Alur Sederhana (Mental Model)Plaintext[Masuk Web] 
+# User Flow & Mental Model (Versi 2.0 - Hybrid & Minigame Edition)
+**Proyek:** ALTEREGO (MVP Lomba)
+**Tenggat:** 72 Jam (Single Page Application - Next.js)
+
+---
+
+## Pemetaan Alur Pengguna Utama
+
+**1. Layar Orientasi (Onboarding Screen)**
+* **Aksi:** Pengguna mengakses URL. Sistem memvalidasi keberadaan profil di `localStorage`.
+* **Interaksi:** Jika data kosong, layar orientasi muncul. Pengguna memasukkan nama pengguna dan memilih satu `avatar_healthy.png` dasar.
+* **Transisi:** Pengguna mengklik "Mulai". Data disimpan, dan layar melakukan *fade-out* menuju Dasbor Utama.
+
+**2. Dasbor Utama (Procedural Dashboard) – Status Netral**
+* **Visual:** Latar belakang diatur ke palet netral. Mesin partikel (`tsparticles`) dalam kondisi *idle*. Avatar berada di tengah layar.
+* **Aksi:** Pengguna berinteraksi dengan panel *Daily Quest* di HUD (Head-Up Display).
+* **Input Pengguna:** Mencentang kotak validasi kebiasaan harian:
+  * Tidur tepat waktu
+  * Minum air
+  * Jalan kaki
+
+**3. Evaluasi State & Rendering Prosedural (Real-Time)**
+* **Aksi:** *State* React mendeteksi perubahan *checkbox* dan memicu fungsi evaluasi mesin visual.
+* **Percabangan Logika:**
+  * **Kondisi A (Optimal - 3/3 Tercapai):** Avatar mempertahankan versi `healthy`. Transisi Tailwind memutar gradasi warna ke cerah/neon. Pustaka partikel dirender untuk memunculkan efek kunang-kunang/cahaya melayang. Tombol akses **Minigame** dan **Mystery Box** terbuka.
+  * **Kondisi B (Kritis - < 3 Tercapai):** Avatar ditukar instan menjadi `tired`. Transisi warna memutar layar menjadi gelap/suram. Partikel dirender menjadi hujan asam atau kode matriks. Kelas animasi CSS `.animate-glitch` disuntikkan secara acak ke elemen panel UI. Akses *Minigame* ditutup.
+
+**4. Retensi Interaktif: Minigame "Glitch Sweeper"**
+* **Aksi:** Dalam Kondisi A, pengguna mengklik tombol "Bersihkan Dunia".
+* **Interaksi:** UI Dasbor meredup. Elemen "virus/glitch digital" bermunculan secara acak di berbagai koordinat absolut layar dengan durasi hitung mundur 30 detik.
+* **Tujuan:** Pengguna harus melakukan *tapping* (klik) secepat mungkin pada entitas virus tersebut sebelum menghilang.
+* **Transisi:** Setelah 30 detik, skor akhir divalidasi, dan pengguna diarahkan untuk mengklaim *Mystery Box*.
+
+**5. Interaksi Gacha (Mystery Box Modal)**
+* **Aksi:** Pengguna mengklik ikon peti yang bergetar.
+* **Interaksi:** *Modal pop-up* muncul. Mesin RNG (Random Number Generator) berjalan di belakang layar untuk mengekstrak satu aset secara acak (Skin Avatar, Item Virtual, Pet Digital, atau Title).
+* **Visual:** Animasi CSS sederhana dari peti tertutup (`box_closed.png`) menjadi terbuka (`box_open.png`) dengan pendaran cahaya, diikuti tampilan aset hadiah.
+
+**6. Panel Inventaris & Persistensi (Inventory Drawer)**
+* **Aksi:** Pengguna menutup *modal* gacha.
+* **Interaksi:** Pengguna dapat membuka *sidebar drawer* untuk memasang/melepas *Pet* atau *Item* yang baru saja didapat ke dalam Dasbor Utama.
+* **Siklus Selesai:** Pembaruan *state* dunia dan inventaris disimpan di `localStorage`. Pengguna meninggalkan situs dengan tampilan dunia yang telah berevolusi (cerah + pet baru), memicu urgensi psikologis untuk mengulangi prosesnya besok.
+
+---
+
+## Diagram Alur Sederhana (Mental Model)
+
+```text
+[Masuk Web] 
    │
    ├─> (Data Kosong?) ──> [Layar Pembuatan Avatar] ──> Simpan Data
    │
    v
-[Dasbor Utama] <─────────────────────────────────────┐
-   │                                                 │
-   ├─> (Panel Centang Kebiasaan: Tidur, Air, Jalan)  │
-   │                                                 │
-   v                                                 │
-[State Engine Evaluasi]                              │
-   │                                                 │
-   ├─> [Target Gagal] ──> Tampilan Gelap & Glitch    │
-   │                                                 │
-   └─> [Target Lulus] ──> Tampilan Cerah & Sehat     │
-                            │                        │
-                            v                        │
-                      [Klaim Mystery Box]            │
-                            │                        │
-                            v                        │
-                     [Masuk Inventaris] ─────────────┘ (Simpan & Tunggu Besok)
-Titik Buta (Blind Spots) yang Harus Kamu WaspadaiSebagai pengembang full-stack yang akan mengeksekusi ini di Front-End, logika kasat matanya terlihat mudah, tapi ada satu jebakan besar: Siklus Reset Harian.Jika kamu hanya menyimpan habitsToday: { sleep: true, water: true, walk: true } di localStorage, saat juri me-refresh halaman atau kamu mendemonstrasikannya keesokan harinya, tugas itu akan tetap tercentang secara permanen.Solusi Wajib: Saat komponen utama (Dasbor) pertama kali dimuat (useEffect), kamu harus membuat sistem pengecekan timestamp tanggal. Jika lastLoginDate di localStorage tidak sama dengan tanggal hari ini, paksa semua centang kebiasaan kembali menjadi false, tetapi pertahankan item di inventaris.Untuk mempercepat pengerjaan malam ini, komponen mana yang mau kamu tulis kodenya terlebih dahulu: Komponen HabitForm untuk logika input state, atau komponen WorldEnvironment untuk mengatur transisi warna Tailwind-nya?
+[Dasbor Utama] <───────────────────────────────────────────────────────┐
+   │                                                                   │
+   ├─> (Panel Centang Kebiasaan: Tidur, Air, Jalan)                    │
+   │                                                                   │
+   v                                                                   │
+[State Engine Evaluasi]                                                │
+   │                                                                   │
+   ├─> [Target Gagal] ──> Tampilan Gelap, Partikel Hujan & Efek Glitch │
+   │                                                                   │
+   └─> [Target Lulus] ──> Tampilan Cerah, Partikel Cahaya              │
+                            │                                          │
+                            v                                          │
+                   [Buka Akses Minigame]                               │
+                            │                                          │
+                            v                                          │
+                  [Main Glitch Sweeper 30s]                            │
+                            │                                          │
+                            v                                          │
+                   [Klaim Mystery Box Gacha]                           │
+                            │                                          │
+                            v                                          │
+                    [Masuk/Atur Inventaris] ───────────────────────────┘
+                    (Simpan localStorage, Reset Jam 00:00)
