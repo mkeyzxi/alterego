@@ -4,21 +4,17 @@ import Image from "next/image";
 interface AvatarRendererProps {
   worldState: "neutral" | "optimal" | "critical";
   equippedPet: string | null;
+  equippedItem: string | null;
 }
 
-export default function AvatarRenderer({ worldState, equippedPet }: AvatarRendererProps) {
+export default function AvatarRenderer({
+  worldState,
+  equippedPet,
+  equippedItem,
+}: AvatarRendererProps) {
   const isHealthy = worldState === "optimal";
   const avatarSrc = isHealthy ? "/img/avatar_healthy.png" : "/img/avatar_tired.png";
   const bgSrc = isHealthy ? "/img/bg_city_day.png" : "/img/bg_city_glitch.png";
-
-  const floatAnimation = {
-    y: [0, -10, 0],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  };
 
   const glitchAnimation = {
     x: [0, -2, 2, -1, 1, 0],
@@ -26,7 +22,7 @@ export default function AvatarRenderer({ worldState, equippedPet }: AvatarRender
     transition: {
       duration: 0.3,
       repeat: Infinity,
-      ease: "linear",
+      ease: "linear" as const,
     },
   };
 
@@ -35,31 +31,18 @@ export default function AvatarRenderer({ worldState, equippedPet }: AvatarRender
     pet_dog: "/img/pet_dog.png",
   };
 
+  const itemMap: Record<string, string> = {
+    item_plant: "/img/item_plant.png",
+    item_lamp: "/img/item_lamp.png",
+  };
+
   return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 5,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "flex-end",
-        height: "100%",
-        pointerEvents: "none",
-      }}
-    >
+    <>
       {/* City Background Layer */}
       <div
+        className="absolute bottom-0 left-0 right-0 z-[1]"
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
           height: "50%",
-          zIndex: 1,
           opacity: worldState === "neutral" ? 0.3 : 0.5,
           transition: "opacity 1s ease",
         }}
@@ -72,6 +55,7 @@ export default function AvatarRenderer({ worldState, equippedPet }: AvatarRender
             src={bgSrc}
             alt="City background"
             fill
+            sizes="100vw"
             style={{
               objectFit: "cover",
               objectPosition: "bottom",
@@ -85,32 +69,25 @@ export default function AvatarRenderer({ worldState, equippedPet }: AvatarRender
         </motion.div>
       </div>
 
-      {/* Avatar */}
-      <motion.div
-        animate={isHealthy ? floatAnimation : glitchAnimation}
-        style={{
-          position: "relative",
-          zIndex: 10,
-          marginBottom: "40px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "8px",
-        }}
+      {/* Instruction #2: Avatar — center bottom with breathe animation */}
+      <div
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 md:w-64 w-48 pointer-events-none"
       >
-        <div
-          style={{
-            position: "relative",
-            width: "180px",
-            height: "220px",
-          }}
+        <motion.div
+          animate={
+            worldState === "critical"
+              ? glitchAnimation
+              : {} /* breathe handled by CSS class */
+          }
+          className={worldState !== "critical" ? "animate-breathe" : ""}
         >
           <Image
             src={avatarSrc}
             alt="Avatar"
-            fill
+            width={256}
+            height={320}
+            className="w-full h-auto object-contain"
             style={{
-              objectFit: "contain",
               filter:
                 worldState === "critical"
                   ? "brightness(0.7) saturate(0.6)"
@@ -118,32 +95,48 @@ export default function AvatarRenderer({ worldState, equippedPet }: AvatarRender
             }}
             priority
           />
-        </div>
+        </motion.div>
+      </div>
 
-        {/* Equipped Pet */}
-        {equippedPet && petMap[equippedPet] && (
-          <motion.div
-            animate={floatAnimation}
+      {/* Instruction #2: Pet — bottom-right corner */}
+      {equippedPet && petMap[equippedPet] && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute bottom-10 right-10 z-10 md:w-32 w-24 pointer-events-none animate-breathe"
+        >
+          <Image
+            src={petMap[equippedPet]}
+            alt="Pet"
+            width={128}
+            height={128}
+            className="w-full h-auto object-contain"
             style={{
-              position: "absolute",
-              bottom: "-10px",
-              right: "-60px",
-              width: "80px",
-              height: "80px",
+              filter: "drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))",
             }}
-          >
-            <Image
-              src={petMap[equippedPet]}
-              alt="Pet"
-              fill
-              style={{
-                objectFit: "contain",
-                filter: "drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))",
-              }}
-            />
-          </motion.div>
-        )}
-      </motion.div>
-    </div>
+          />
+        </motion.div>
+      )}
+
+      {/* Instruction #2: Item — bottom-left corner */}
+      {equippedItem && itemMap[equippedItem] && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute bottom-10 left-10 z-10 md:w-32 w-24 pointer-events-none animate-breathe"
+        >
+          <Image
+            src={itemMap[equippedItem]}
+            alt="Equipped Item"
+            width={128}
+            height={128}
+            className="w-full h-auto object-contain"
+            style={{
+              filter: "drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))",
+            }}
+          />
+        </motion.div>
+      )}
+    </>
   );
 }

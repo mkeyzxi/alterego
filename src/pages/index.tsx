@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Swords, Gift, Award } from "lucide-react";
+import { Package, Swords, Gift } from "lucide-react";
 
 import HabitDashboard from "@/components/HabitDashboard";
 import AvatarRenderer from "@/components/AvatarRenderer";
@@ -23,7 +24,7 @@ const STORAGE_KEY = "alterego_data";
 
 interface GameData {
   username: string;
-  habits: { sleep: boolean; water: boolean; walk: boolean };
+  habits: { sleep: boolean; water: number; walk: boolean };
   questCompleted: boolean;
   questDate: string;
   inventory: Record<RewardCategory, Reward[]>;
@@ -37,7 +38,7 @@ interface GameData {
 function getDefaultData(): GameData {
   return {
     username: "",
-    habits: { sleep: false, water: false, walk: false },
+    habits: { sleep: false, water: 0, walk: false },
     questCompleted: false,
     questDate: "",
     inventory: { skins: [], items: [], pets: [], titles: [] },
@@ -61,7 +62,7 @@ function loadData(): GameData {
     if (parsed.questDate !== today) {
       return {
         ...parsed,
-        habits: { sleep: false, water: false, walk: false },
+        habits: { sleep: false, water: 0, walk: false },
         questCompleted: false,
         questDate: "",
         mysteryBoxClaimed: false,
@@ -104,42 +105,41 @@ export default function Home() {
     }
   }, [data, isLoaded]);
 
-  // Calculate world state
-  const completedCount = Object.values(data.habits).filter(Boolean).length;
+  // Calculate world state — "optimal" requires sleep + water===8 + walk
+  const allHabitsDone =
+    data.habits.sleep && data.habits.water === 8 && data.habits.walk;
+  const anyHabitDone =
+    data.habits.sleep || data.habits.water > 0 || data.habits.walk;
+
   const worldState: "neutral" | "optimal" | "critical" = !data.questCompleted
     ? "neutral"
-    : completedCount === 3
+    : allHabitsDone
     ? "optimal"
     : "critical";
 
-  // Handle habit toggle
+  // Handle boolean habit toggle (sleep, walk)
   const handleToggle = useCallback(
-    (key: "sleep" | "water" | "walk") => {
+    (key: "sleep" | "walk") => {
       if (data.questCompleted) return;
-
-      const newHabits = { ...data.habits, [key]: !data.habits[key] };
-      const allChecked = Object.values(newHabits).every(Boolean);
-      const anyChecked = Object.values(newHabits).some(Boolean);
-      const today = new Date().toISOString().split("T")[0];
-
-      // Auto-complete quest when all 3 checked OR when user unchecks back
-      // Quest completes on any submit action
-      if (allChecked || (!allChecked && Object.values(newHabits).filter(Boolean).length > 0 && data.habits[key])) {
-        setData((prev) => ({
-          ...prev,
-          habits: newHabits,
-          questCompleted: allChecked,
-          questDate: allChecked ? today : prev.questDate,
-        }));
-      } else {
-        setData((prev) => ({
-          ...prev,
-          habits: newHabits,
-        }));
-      }
+      setData((prev) => ({
+        ...prev,
+        habits: { ...prev.habits, [key]: !prev.habits[key] },
+      }));
     },
-    [data]
+    [data.questCompleted]
   );
+
+  // Handle water counter increment
+  const handleAddWater = useCallback(() => {
+    if (data.questCompleted) return;
+    setData((prev) => ({
+      ...prev,
+      habits: {
+        ...prev.habits,
+        water: Math.min(prev.habits.water + 1, 8),
+      },
+    }));
+  }, [data.questCompleted]);
 
   // Submit quest
   const handleSubmitQuest = useCallback(() => {
@@ -219,87 +219,33 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Main Container */}
-      <main
+      {/* Main Container — Instruction #2: relative w-full h-screen */}
+      <main className="relative w-full h-screen overflow-hidden font-[Outfit,sans-serif]"
         style={{
-          position: "relative",
-          width: "100vw",
-          height: "100vh",
-          overflow: "hidden",
           background: bgGradient,
           transition: "background 1.5s ease",
-          fontFamily: "'Outfit', sans-serif",
         }}
       >
         {/* Layer 0+1: Procedural Background */}
         <ProceduralBackground worldState={worldState} />
 
-        {/* Layer 2: Avatar + City */}
-        <AvatarRenderer
-          worldState={worldState}
-          equippedPet={data.equippedPet}
-        />
-
-        {/* Equipped Item Display */}
-        {data.equippedItem && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{
-              position: "absolute",
-              bottom: "50px",
-              left: "calc(50% + 80px)",
-              zIndex: 8,
-              width: "60px",
-              height: "60px",
-              pointerEvents: "none",
-            }}
-          >
-            <motion.img
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              src={
-                data.equippedItem === "item_plant"
-                  ? "/img/item_plant.png"
-                  : "/img/item_lamp.png"
-              }
-              alt="Equipped Item"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                filter: "drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))",
-              }}
-            />
-          </motion.div>
-        )}
-
-        {/* Layer 3: HUD */}
-        {/* Habit Dashboard */}
-        <HabitDashboard
-          habits={data.habits}
-          onToggle={handleToggle}
-          worldState={worldState}
-          questCompleted={data.questCompleted}
-        />
-
-        {/* Username & Title Display */}
+        {/* Instruction #3: HUD Badge Header — top-left */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          style={{
-            position: "absolute",
-            top: "20px",
-            right: "20px",
-            zIndex: 20,
-            textAlign: "right",
-          }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="absolute top-5 left-5 z-30 flex items-center gap-3 bg-white/20 backdrop-blur-md p-2 rounded-full"
         >
-          <div
+          <Image
+            src="/img/badge_rookie.png"
+            alt="Badge Rookie"
+            width={40}
+            height={40}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <span
+            className="text-sm font-bold pr-3"
             style={{
-              fontSize: "16px",
-              fontWeight: 700,
               color:
                 worldState === "optimal"
                   ? "#064e3b"
@@ -311,67 +257,91 @@ export default function Home() {
             }}
           >
             {data.username}
-          </div>
-          {data.equippedTitle && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#fbbf24",
-                letterSpacing: "1px",
-                marginTop: "4px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: "4px",
-              }}
-            >
-              <Award size={12} />
-              {data.inventory.titles.find(
-                (t) => t.id === data.equippedTitle
-              )?.name || ""}
-            </motion.div>
-          )}
+          </span>
         </motion.div>
+
+        {/* Instruction #2: Avatar — center bottom */}
+        <AvatarRenderer
+          worldState={worldState}
+          equippedPet={data.equippedPet}
+          equippedItem={data.equippedItem}
+        />
+
+        {/* Instruction #5: Habit Dashboard — mobile bottom full-width, md side panel */}
+        <HabitDashboard
+          habits={data.habits}
+          onToggleSleep={() => handleToggle("sleep")}
+          onToggleWalk={() => handleToggle("walk")}
+          onAddWater={handleAddWater}
+          worldState={worldState}
+          questCompleted={data.questCompleted}
+        />
 
         {/* Submit Quest Button (when habits checked but not submitted) */}
         <AnimatePresence>
-          {!data.questCompleted &&
-            Object.values(data.habits).some(Boolean) && (
-              <motion.button
-                id="submit-quest-btn"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                onClick={handleSubmitQuest}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  position: "absolute",
-                  bottom: "100px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  zIndex: 20,
-                  padding: "14px 32px",
-                  borderRadius: "16px",
-                  border: "none",
-                  background: "linear-gradient(135deg, #6366f1, #818cf8)",
-                  color: "white",
-                  fontSize: "15px",
-                  fontWeight: 700,
-                  fontFamily: "inherit",
-                  cursor: "pointer",
-                  boxShadow: "0 0 30px rgba(99, 102, 241, 0.4)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                Selesaikan Quest
-              </motion.button>
-            )}
+          {!data.questCompleted && anyHabitDone && (
+            <motion.button
+              id="submit-quest-btn"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              onClick={handleSubmitQuest}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute z-20 hidden md:flex"
+              style={{
+                bottom: "100px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                padding: "14px 32px",
+                borderRadius: "16px",
+                border: "none",
+                background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                color: "white",
+                fontSize: "15px",
+                fontWeight: 700,
+                fontFamily: "inherit",
+                cursor: "pointer",
+                boxShadow: "0 0 30px rgba(99, 102, 241, 0.4)",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              Selesaikan Quest
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile Submit Quest Button — inside mobile panel area */}
+        <AnimatePresence>
+          {!data.questCompleted && anyHabitDone && (
+            <motion.button
+              id="submit-quest-btn-mobile"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              onClick={handleSubmitQuest}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="fixed bottom-[200px] left-1/2 -translate-x-1/2 z-30 flex md:hidden"
+              style={{
+                padding: "12px 28px",
+                borderRadius: "14px",
+                border: "none",
+                background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: 700,
+                fontFamily: "inherit",
+                cursor: "pointer",
+                boxShadow: "0 0 30px rgba(99, 102, 241, 0.4)",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              Selesaikan Quest
+            </motion.button>
+          )}
         </AnimatePresence>
 
         {/* Bottom Action Bar */}
@@ -379,15 +349,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 20,
-            display: "flex",
-            gap: "12px",
-          }}
+          className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-3 md:flex hidden"
         >
           {/* Inventory Button */}
           <motion.button
