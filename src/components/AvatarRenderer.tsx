@@ -71,7 +71,7 @@ export default function AvatarRenderer({
 
       {/* Instruction #2: Avatar — center bottom with breathe animation */}
       <div
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 md:w-64 w-48 pointer-events-none"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 md:w-64 w-48 pointer-events-none"
       >
         <motion.div
           animate={
