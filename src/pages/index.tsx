@@ -313,7 +313,7 @@ export default function Home() {
               onClick={handleSubmitQuest}
               whileHover={{scale: 1.05}}
               whileTap={{scale: 0.95}}
-              className="absolute z-40 hidden md:flex"
+              className="absolute z-40  md:flex"
               style={{
                 bottom: '100px',
                 left: '50%',
